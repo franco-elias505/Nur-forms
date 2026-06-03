@@ -6,6 +6,10 @@ async function getMembership(campaignId, userId){
     });
 }
 
+async function insertMember(campaignId, memberId, role){
+    return await campaignMemberModel.create({campaign_id: campaignId,user_id: memberId, role: role})
+}
 module.exports = {
-    getMembership
+    getMembership,
+    insertMember
 }

@@ -36,6 +36,7 @@ async function getAsMemberCampaigns(memberId){
 }
 
 async function createCampaign(campaignData, ownerId){
+    console.log(`supuesto usuario owner: ${ownerId}`);
     try {
         const result = await campaignModel.create({...campaignData, created_by: ownerId});
         return result;

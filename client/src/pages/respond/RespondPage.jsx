@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom' //bug 1 de frontend no estabamos importando el hook searchParams
 import { formsApi, submissionsApi } from '../../api/services'
 import { Loading, Alert } from '../../components/ui'
 import logo from '../../assets/nur_logo.png'

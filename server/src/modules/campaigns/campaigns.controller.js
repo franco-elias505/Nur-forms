@@ -30,6 +30,7 @@ const getById = async (req, res, next) => {
 const create = async (req, res) => {
   try {
     const result = await createService(req.body, req.user.id)
+    console.log(`Campaha creada exitosamente: ${req.body.name}, owner es: ${req.user.email}`);
     return res.status(201).json(result);
   } catch (error) { //aqui manejamos errores de mala entrada peeero no estamos manejando el caso de un error interno en el server
     return res.status(400).json({ message: error.message });
@@ -54,6 +55,7 @@ const remove = async (req, res, next) => {
 
   } catch (error) {
     if(error.message === 'Error al eliminar la campaña intente nuevamente') return next(error);
+    console.error(`Error capturado en el controller: ${error.message}`);
     res.status(400).json({ message: error.message })
   }
 }

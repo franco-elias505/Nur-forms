@@ -129,7 +129,7 @@ export default function CampaignDetailPage() {
     } catch {}
   }
 
-  const shareUrl = (formId) => `${window.location.origin}/respond/${formId}`
+  const shareUrl = (formId) => `${window.location.origin}/responder/${formId}` //2do bug aqui no estaba especificada la ruta a la pagina que renderiza la pagina RespondPage
 
   if (loading) return <Loading full />
   if (!campaign) return null

@@ -11,7 +11,7 @@ const {
   deleteCampaign
 } = require('../../repositories/campaign-repository.js');
 
-const {getMembership} = require('../../repositories/campaign-member.repository.js');
+const {getMembership, insertMember} = require('../../repositories/campaign-member.repository.js');
 
 const getAllService = async (role, userId) => {
 
@@ -66,7 +66,7 @@ const getByIdService = async (campaignId, userId, userRole) => {
 const createService = async (campaignData, ownerId) => {
 
    // const { name, description, starts_at, ends_at } = req.body;
-
+  
    if(campaignData.name.trim() == ''){
     throw new Error('Nombre de campaha es obligatorio');
    }
@@ -100,6 +100,7 @@ const createService = async (campaignData, ownerId) => {
             ends_at: campaignData.ends_at
         }, ownerId);
 
+        await insertMember(result.id, ownerId, 'owner');
         return {
             message: 'Campaha creada exitosamente'
         }
@@ -176,14 +177,14 @@ const updateService = async (id, data, userId, userRole) => {
 
 const removeService = async (id, userId, userRole) => {
   try {
-
+    console.log(userId);
     const existResult = await getCampaignById(id);
     if(!existResult){
       throw new Error('Campaña no encontrada');
     }
 
     const currentStatus = existResult.status;
-    if(currentStatus !== 'closed' && currentStatus !== 'archived'){
+    if(currentStatus !== 'closed' && currentStatus !== 'archived' && currentStatus !== 'draft'){
       throw new Error('Estado de campaña invalido para eliminacion, cambie el estado para poder proceder');
     }
 
@@ -192,7 +193,7 @@ const removeService = async (id, userId, userRole) => {
       throw new Error('No forma parte de esta campaña');
     }
     if(userMembership.role !== 'owner'){
-      throw new Error('No tiene los permisos para elimunar esta campaña');
+      throw new Error('No tiene los permisos para eliminar esta campaña');
     }
 
     const result = await deleteCampaign(id);
