@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { campaignsApi, formsApi, usersApi } from '../../api/services'
+import { campaignsApi, formsApi, usersApi, invitationsApi } from '../../api/services'
 import { Modal, Confirm, StatusBadge, EmptyState, Loading, Alert } from '../../components/ui'
 import useAuthStore from '../../store/authStore'
 import './CampaignDetail.css'
@@ -11,6 +11,126 @@ const EMPTY_FORM = {
   max_responses_per_user: 1, welcome_message: '', thank_you_message: '',
   primary_color: '#1d4ed8'
 }
+
+function InvitationsPanel({ form }) {
+  const [invitations, setInvitations] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [emailInput, setEmailInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const [results, setResults] = useState([])
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await invitationsApi.getByForm(form.id)
+      setInvitations(res.data)
+    } catch {} finally { setLoading(false) }
+  }, [form.id])
+
+  useEffect(() => { load() }, [load])
+
+  const inviteLink = (token) =>
+    `${window.location.origin}/responder/${form.id}?token=${token}`
+
+  const handleSend = async () => {
+    const emails = emailInput.split(',').map(e => e.trim()).filter(Boolean)
+    if (!emails.length) return
+    setSending(true); setResults([])
+    try {
+      const res = await invitationsApi.create(form.id, { emails })
+      setResults(res.data)
+      setEmailInput('')
+      load()
+    } catch {} finally { setSending(false) }
+  }
+
+  const handleRemove = async (id) => {
+    try { await invitationsApi.remove(id); load() } catch {}
+  }
+
+  const statusLabel = {
+    pending: '⏳ Pendiente',
+    opened: '👁 Abierta',
+    submitted: '✅ Respondida',
+    expired: '❌ Expirada'
+  }
+
+  return (
+    <div style={{ marginTop: 10, padding: '12px 14px', background: 'var(--bg-subtle)', borderRadius: 8, border: '1px solid var(--border)' }}>
+      <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10 }}>
+        🔒 Invitaciones — {invitations.length} enviadas
+      </p>
+
+      {/* Enviar invitaciones */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+        <input
+          type="text"
+          value={emailInput}
+          onChange={e => setEmailInput(e.target.value)}
+          placeholder="email@nur.edu.bo, otro@nur.edu.bo"
+          style={{ flex: 1, fontSize: 12, height: 30, padding: '0 8px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--bg)' }}
+        />
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={handleSend}
+          disabled={sending || !emailInput.trim()}
+        >
+          {sending ? '...' : 'Invitar'}
+        </button>
+      </div>
+
+      {/* Resultados del envío */}
+      {results.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          {results.map((r, i) => (
+            <p key={i} style={{ fontSize: 11, color: r.status === 'sent' ? 'var(--success)' : 'var(--warning)' }}>
+              {r.email} — {r.status === 'sent' ? '✅ Enviado' : r.status === 'already_invited' ? '⚠ Ya invitado' : '⚠ Email falló'}
+              {r.token && (
+                <span
+                  style={{ marginLeft: 8, cursor: 'pointer', textDecoration: 'underline' }}
+                  onClick={() => navigator.clipboard.writeText(inviteLink(r.token))}
+                >
+                  Copiar link
+                </span>
+              )}
+            </p>
+          ))}
+        </div>
+      )}
+
+      {/* Lista de invitaciones */}
+      {loading ? (
+        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Cargando...</p>
+      ) : invitations.length === 0 ? (
+        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Sin invitaciones aún.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {invitations.map(inv => (
+            <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+              <span style={{ flex: 1, color: 'var(--text-h)' }}>{inv.email}</span>
+              <span style={{ color: 'var(--text-muted)', minWidth: 90 }}>{statusLabel[inv.status] || inv.status}</span>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: 11, padding: '2px 8px' }}
+                onClick={() => navigator.clipboard.writeText(inviteLink(inv.token))}
+              >
+                Copiar link
+              </button>
+              <button
+                className="btn btn-danger btn-sm"
+                style={{ fontSize: 11, padding: '2px 8px' }}
+                onClick={() => handleRemove(inv.id)}
+              >
+                Quitar
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 
 export default function CampaignDetailPage() {
   const { id } = useParams()
@@ -198,20 +318,23 @@ export default function CampaignDetailPage() {
                     </span>
                   </div>
                   {f.description && <p className="text-sm text-muted">{f.description}</p>}
-                  {f.status === 'published' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <input
-                        type="text"
-                        readOnly
-                        value={shareUrl(f.id)}
-                        style={{ fontSize: 11, height: 26, background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: 4, padding: '0 6px', width: 340, cursor: 'text', color: 'var(--text-muted)' }}
-                        onClick={e => e.target.select()}
-                      />
-                      <button className="btn btn-ghost btn-sm" onClick={() => { navigator.clipboard.writeText(shareUrl(f.id)) }}>
-                        Copiar
-                      </button>
-                    </div>
-                  )}
+                  {f.status === 'published' && f.access_type === 'public' && (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+    <input
+      type="text"
+      readOnly
+      value={shareUrl(f.id)}
+      style={{ fontSize: 11, height: 26, background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: 4, padding: '0 6px', width: 340, cursor: 'text', color: 'var(--text-muted)' }}
+      onClick={e => e.target.select()}
+    />
+    <button className="btn btn-ghost btn-sm" onClick={() => navigator.clipboard.writeText(shareUrl(f.id))}>
+      Copiar
+    </button>
+  </div>
+)}
+{f.status === 'published' && f.access_type === 'private' && (
+  <InvitationsPanel form={f} />
+)}
                 </div>
                 <div className="form-row__actions">
                   <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/campaigns/${id}/forms/${f.id}/edit`)}>

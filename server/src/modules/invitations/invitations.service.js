@@ -37,7 +37,6 @@ const create = async (formId, emails, userId, userRole, baseUrl) => {
       results.push({ email, status: 'email_failed', token: invitation.token })
     }
   }
-
   return results
 }
 
