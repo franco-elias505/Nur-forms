@@ -54,7 +54,7 @@ export default function LoginForm({ onSuccess }) {
 
       {error && <p className="login-error">{error}</p>}
 
-      <button type="submit" className="btn btn-primary btn-lg w-full" disabled={loading}>
+      <button id="loginBtn" type="submit" className="btn btn-primary btn-lg w-full" disabled={loading}>
         {loading ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : null}
         {loading ? 'Ingresando...' : 'Iniciar sesión'}
       </button>
