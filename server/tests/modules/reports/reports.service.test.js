@@ -149,6 +149,10 @@ describe('getByQuestion', () => {
 
 // ───── exportCSV ─────
 describe('exportCSV', () => {
+  beforeEach(() => {
+    Option.findAll.mockResolvedValue([]);
+  });
+
   test('lanza error si el formulario no existe', async () => {
     Form.findByPk.mockResolvedValue(null);
     await expect(exportCSV('bad-form', 'user-1', 'admin')).rejects.toThrow('Formulario no encontrado');
