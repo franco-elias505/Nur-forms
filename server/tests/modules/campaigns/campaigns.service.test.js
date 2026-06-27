@@ -98,7 +98,7 @@ describe('getByIdService', () => {
 describe('createService', () => {
   test('lanza error si el nombre está vacío', async () => {
     await expect(createService({ name: '   ' }, 'user-1'))
-      .rejects.toThrow('Nombre de campaha es obligatorio');
+      .rejects.toThrow('Nombre de campaña es obligatorio');
   });
 
   test('lanza error si la fecha de inicio es pasada', async () => {
@@ -112,7 +112,7 @@ describe('createService', () => {
     const futureEnd = '2099-01-01';
 
     await expect(createService({ name: 'Mi Campaña', starts_at: futureStart, ends_at: futureEnd }, 'user-1'))
-      .rejects.toThrow('La fecha de finalizacion no puede ser pasada a la fecha de inicio');
+      .rejects.toThrow('La fecha de finalización no puede ser pasada a la fecha de inicio');
   });
 
   test('crea campaña exitosamente sin fechas', async () => {
@@ -120,7 +120,7 @@ describe('createService', () => {
     campaignMemberRepo.insertMember.mockResolvedValue({});
 
     const result = await createService({ name: 'Nueva Campaña', description: 'Desc' }, 'user-1');
-    expect(result).toEqual({ message: 'Campaha creada exitosamente' });
+    expect(result).toEqual({ message: 'Campaña creada exitosamente' });
     expect(campaignMemberRepo.insertMember).toHaveBeenCalledWith('new-camp', 'user-1', 'owner');
   });
 
@@ -140,18 +140,18 @@ describe('createService', () => {
 describe('updateService', () => {
   test('lanza error si la campaña no existe', async () => {
     campaignRepo.getCampaignById.mockResolvedValue(null);
-    await expect(updateService('bad-id', {}, 'u', 'admin')).rejects.toThrow('Campana inexistente');
+    await expect(updateService('bad-id', {}, 'u', 'admin')).rejects.toThrow('Campaña inexistente');
   });
 
   test('lanza error si la campaña está archivada', async () => {
     campaignRepo.getCampaignById.mockResolvedValue({ ...mockCampaign, status: 'archived' });
-    await expect(updateService('camp-1', {}, 'u', 'admin')).rejects.toThrow('Esta campana no se puede editar');
+    await expect(updateService('camp-1', {}, 'u', 'admin')).rejects.toThrow('Esta campaña no se puede editar');
   });
 
   test('lanza error con transición de estado inválida (draft → archived)', async () => {
     campaignRepo.getCampaignById.mockResolvedValue({ ...mockCampaign, status: 'draft' });
     await expect(updateService('camp-1', { status: 'archived' }, 'u', 'admin'))
-      .rejects.toThrow('Transicion de estado no permitida');
+      .rejects.toThrow('Transición de estado no permitida');
   });
 
   test('lanza error si el nombre queda vacío', async () => {
@@ -163,7 +163,7 @@ describe('updateService', () => {
   test('lanza error si end_at es anterior a start_at', async () => {
     campaignRepo.getCampaignById.mockResolvedValue({ ...mockCampaign, update: jest.fn() });
     await expect(updateService('camp-1', { starts_at: '2099-06-10', ends_at: '2099-06-01' }, 'u', 'admin'))
-      .rejects.toThrow('fecha de finalizacion');
+      .rejects.toThrow('fecha de finalización');
   });
 
   test('actualiza nombre exitosamente', async () => {
@@ -172,7 +172,7 @@ describe('updateService', () => {
 
     const result = await updateService('camp-1', { name: 'Nuevo Nombre' }, 'u', 'admin');
     expect(campaign.update).toHaveBeenCalledWith({ name: 'Nuevo Nombre' });
-    expect(result).toEqual({ message: 'Campana actualizada con exito' });
+    expect(result).toEqual({ message: 'Campaña actualizada con éxito' });
   });
 
   test('permite transición válida draft → active', async () => {
@@ -182,7 +182,7 @@ describe('updateService', () => {
 
     const result = await updateService('camp-1', { status: 'active' }, 'u', 'admin');
     expect(campaignRepo.updateCampaignState).toHaveBeenCalledWith('camp-1', 'active');
-    expect(result.message).toBe('Campana actualizada con exito');
+    expect(result.message).toBe('Campaña actualizada con éxito');
   });
 });
 
@@ -195,7 +195,7 @@ describe('removeService', () => {
 
   test('lanza error si la campaña está activa', async () => {
     campaignRepo.getCampaignById.mockResolvedValue({ ...mockCampaign, status: 'active' });
-    await expect(removeService('camp-1', 'u', 'creator')).rejects.toThrow('Estado de campaña invalido');
+    await expect(removeService('camp-1', 'u', 'creator')).rejects.toThrow('Estado de campaña inválido');
   });
 
   test('lanza error si el usuario no es miembro', async () => {

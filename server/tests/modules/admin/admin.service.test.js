@@ -162,6 +162,17 @@ describe('processNewUser', () => {
     await expect(processNewUser(newUserData)).rejects.toThrow(/ya esta siendo ocupada/);
   });
 
+  test('lanza error si createUser falla', async () => {
+    inputValidator.validateEmail.mockReturnValue(okResult);
+    inputValidator.validateInput.mockReturnValue(okResult);
+    inputValidator.validateRole.mockReturnValue(okResult);
+    userRepository.getUserByEmail.mockResolvedValue(null);
+    bcrypt.hash.mockResolvedValue('hashed-pass');
+    userRepository.createUser.mockResolvedValue(null);
+
+    await expect(processNewUser(newUserData)).rejects.toThrow('Error al crear el usuario, intente nuevamente');
+  });
+
   test('crea el usuario exitosamente con la contraseña hasheada', async () => {
     inputValidator.validateEmail.mockReturnValue(okResult);
     inputValidator.validateInput.mockReturnValue(okResult);
