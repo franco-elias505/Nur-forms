@@ -2,6 +2,7 @@ const campaignModel = require('../models/Campaign.js');
 const userModel = require('../models/User.js');
 const campaignMemberModel = require('../models/CampaignMember.js');
 const formModel = require('../models/Form.js');
+const { Op } = require('sequelize');
 
 async function getAllCampaigns(){
     try {
@@ -26,9 +27,15 @@ async function getAllUserCampaigns(userId){
 
 async function getAsMemberCampaigns(memberId){
     try {
-        const result = await campaignModel.findAll({include: [{model: campaignMemberModel, as: 'members',
-            where: {user_id: memberId}
-        }]});
+        const result = await campaignModel.findAll({
+            where: {
+                created_by: { [Op.ne]: memberId }
+            },
+            include: [{
+                model: campaignMemberModel, as: 'members',
+                where: { user_id: memberId }
+            }]
+        });
         return result;
     } catch (error) {
         throw error;
